@@ -37,5 +37,7 @@ $routes->get('profile', 'Home::profile', ['filter' => 'auth']);
 $routes->get('contact', 'Home::contact', ['filter' => 'auth']);
 
 $routes->group('api', function ($routes) {
-    $routes->post('monthly', 'ApiController::monthly');
+    $routes->get('/', 'ApiController::index'); // Add this line
+    $routes->post('monthly', 'ApiController::monthlyPost');
+    $routes->get('monthly', 'ApiController::monthlyGet');
 });

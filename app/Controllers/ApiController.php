@@ -21,6 +21,10 @@ class ApiController extends ResourceController
      *
      * @return ResponseInterface
      */
+    public function __construct()
+    {
+        $this->transaction = new \App\Models\TransactionModel();
+    }
     public function index()
     {
         //
@@ -126,6 +130,11 @@ class ApiController extends ResourceController
     }
 
     return $this->respond($data);
+}
+public function monthlyGet()
+{
+    $transactions = $this->transaction->where('created_at >=', date('Y-m-01'))->findAll();
+    return $this->response->setJSON($transactions);
 }
 }
 
