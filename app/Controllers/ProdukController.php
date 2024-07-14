@@ -13,6 +13,7 @@ class ProdukController extends BaseController
     function __construct()
     {
         $this->product = new ProductModel();
+        $this->validation = \Config\Services::validation();
     }
 
     public function index()
@@ -22,8 +23,19 @@ class ProdukController extends BaseController
 
         return view('v_produk', $data);
     }
+
     public function create()
 {
+    $rules = [
+        'nama' => 'required|min_length[6]',
+        'harga' => 'required|numeric',
+        'jumlah' => 'required|numeric',
+    ];
+
+    if (!$this->validate($rules)) {
+        return redirect()->back()->withInput()->with('failed', $this->validator->getErrors());
+    }
+
     $dataFoto = $this->request->getFile('foto');
 
     $dataForm = [
@@ -42,9 +54,20 @@ class ProdukController extends BaseController
     $this->product->insert($dataForm);
 
     return redirect('produk')->with('success', 'Data Berhasil Ditambah');
-} 
+}
+
 public function edit($id)
 {
+    $rules = [
+        'nama' => 'required|min_length[6]',
+        'harga' => 'required|numeric',
+        'jumlah' => 'required|numeric',
+    ];
+
+    if (!$this->validate($rules)) {
+        return redirect()->back()->withInput()->with('failed', $this->validator->getErrors());
+    }
+
     $dataProduk = $this->product->find($id);
 
     $dataForm = [
@@ -73,39 +96,40 @@ public function edit($id)
     return redirect('produk')->with('success', 'Data Berhasil Diubah');
 }
 
-public function delete($id)
-{
-    $dataProduk = $this->product->find($id);
+    public function delete($id)
+    {
+        $dataProduk = $this->product->find($id);
 
-    if ($dataProduk['foto'] != '' and file_exists("NiceAdmin/assets/img/" . $dataProduk['foto'] . "")) {
-        unlink("NiceAdmin/assets/img/" . $dataProduk['foto']);
+        if ($dataProduk['foto'] != '' and file_exists("NiceAdmin/assets/img/" . $dataProduk['foto'] . "")) {
+            unlink("NiceAdmin/assets/img/" . $dataProduk['foto']);
+        }
+
+        $this->product->delete($id);
+
+        return redirect('produk')->with('success', 'Data Berhasil Dihapus');
     }
 
-    $this->product->delete($id);
+    public function download()
+    {
+        $product = $this->product->findAll();
 
-    return redirect('produk')->with('success', 'Data Berhasil Dihapus');
-}
-public function download()
-{
-    $product = $this->product->findAll();
+        $html = view('v_produkPDF', ['product' => $product]);
 
-    $html = view('v_produkPDF', ['product' => $product]);
+        $filename = date('y-m-d-H-i-s') . '-produk';
 
-    $filename = date('y-m-d-H-i-s') . '-produk';
+        // instantiate and use the dompdf class
+        $dompdf = new Dompdf();
 
-    // instantiate and use the dompdf class
-    $dompdf = new Dompdf();
+        // load HTML content
+        $dompdf->loadHtml($html);
 
-    // load HTML content
-    $dompdf->loadHtml($html);
+        // (optional) setup the paper size and orientation
+        $dompdf->setPaper('A4', 'potrait');
 
-    // (optional) setup the paper size and orientation
-    $dompdf->setPaper('A4', 'potrait');
+        // render html as PDF
+        $dompdf->render();
 
-    // render html as PDF
-    $dompdf->render();
-
-    // output the generated pdf
-    $dompdf->stream($filename);
-}
+        // output the generated pdf
+        $dompdf->stream($filename);
+    }
 }

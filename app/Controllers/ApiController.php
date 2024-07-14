@@ -5,26 +5,32 @@ namespace App\Controllers;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
-use App\Models\UserModel;
-use App\Models\TransactionModel;
-use App\Models\TransactionDetailModel;
 
+use App\models\UserModel;
+use App\models\TransactionModel;
+use App\models\TransactionDetailModel;
 
 class ApiController extends ResourceController
 {
-    protected $apikey = "31bc3501efd67a12067d8e6f5a66f726";
+
+    protected $apiKey = "8f172d7b783b9dcfd82059b098b515a3";
     protected $user;
     protected $transaction;
     protected $transaction_detail;
+
+    function __construct()
+    {
+        $this->user = new UserModel();
+        $this->transaction = new TransactionModel();
+        $this->transaction_detail = new TransactionDetailModel();
+
+    }
+
     /**
      * Return an array of resource objects, themselves in array format.
      *
      * @return ResponseInterface
      */
-    public function __construct()
-    {
-        $this->transaction = new \App\Models\TransactionModel();
-    }
     public function index()
     {
         //
@@ -97,44 +103,76 @@ class ApiController extends ResourceController
     {
         //
     }
-    public function monthly(){
-    $data = [
-        'query' => [],
-        'results' => [],
-        'status' => ["code" => 401, "description" => "Unauthorized"]
-    ];
 
-    $headers = $this->request->headers();
-    $postData = $this->request->getPost();
+    public function monthly()
+    {
+        $data = [
+            'query' => [],
+            'results' => [],
+            'status' => ["code" => 401, "description" => "Unauthorized"]
+        ];
 
-    $data['query'] = $postData;
+        $headers = $this->request->headers();
+        $postData = $this->request->getPost();
 
-    array_walk($headers, function (&$value, $key) {
-        $value = $value->getValue();
-    });
+        $data['query'] = $postData;
 
-    if ($headers["Key"] == $this->apiKey) {
-        if ($postData['type'] == 'transaction') {
-            $result = $this->transaction->select('COUNT(*) as jml')->like('created_at', '' . $postData['tahun'] . '-' . $postData['bulan'] . '', 'after')->first();
-            $data['results'] = $result;
-            $data['status'] = ["code" => 200, "description" => "OK"];
-        } elseif ($postData['type'] == 'earning') {
-            $result = $this->transaction->select('sum(total_harga) as jml')->like('created_at', '' . $postData['tahun'] . '-' . $postData['bulan'] . '', 'after')->first();
-            $data['results'] = $result;
-            $data['status'] = ["code" => 200, "description" => "OK"];
-        } elseif ($postData['type'] == 'user') {
-            $result = $this->user->select('COUNT(*) as jml')->like('created_at', '' . $postData['tahun'] . '-' . $postData['bulan'] . '', 'after')->first();
-            $data['results'] = $result;
-            $data['status'] = ["code" => 200, "description" => "OK"];
+        array_walk($headers, function (&$value, $key) {
+            $value = $value->getValue();
+        });
+
+        if ($headers["Key"] == $this->apiKey) {
+            if ($postData['type'] == 'transaction') {
+                $result = $this->transaction->select('COUNT(*) as jml')->like('created_at', '' . $postData['tahun'] . '-' . $postData['bulan'] . '', 'after')->first();
+                $data['results'] = $result;
+                $data['status'] = ["code" => 200, "description" => "OK"];
+            } elseif ($postData['type'] == 'earning') {
+                $result = $this->transaction->select('sum(total_harga) as jml')->like('created_at', '' . $postData['tahun'] . '-' . $postData['bulan'] . '', 'after')->first();
+                $data['results'] = $result;
+                $data['status'] = ["code" => 200, "description" => "OK"];
+            } elseif ($postData['type'] == 'user') {
+                $result = $this->user->select('COUNT(*) as jml')->like('created_at', '' . $postData['tahun'] . '-' . $postData['bulan'] . '', 'after')->first();
+                $data['results'] = $result;
+                $data['status'] = ["code" => 200, "description" => "OK"];
+            }
         }
+
+        return $this->respond($data);
     }
 
-    return $this->respond($data);
-}
-public function monthlyGet()
-{
-    $transactions = $this->transaction->where('created_at >=', date('Y-m-01'))->findAll();
-    return $this->response->setJSON($transactions);
-}
-}
+    public function yearly()
+    {
+        $data = [
+            'query' => [],
+            'results' => [],
+            'status' => ["code" => 401, "description" => "Unauthorized"]
+        ];
 
+        $headers = $this->request->headers();
+        $postData = $this->request->getPost();
+
+        $data['query'] = $postData;
+
+        array_walk($headers, function (&$value, $key) {
+            $value = $value->getValue();
+        });
+
+        if ($headers["Key"] == $this->apiKey) {
+            if ($postData['type'] == 'transaction') {
+                $result = $this->transaction->select('COUNT(*) as jml')->like('created_at', '' . $postData['tahun'] . '', 'after')->first();
+                $data['results'] = $result;
+                $data['status'] = ["code" => 200, "description" => "OK"];
+            } elseif ($postData['type'] == 'earning') {
+                $result = $this->transaction->select('sum(total_harga) as jml')->like('created_at', '' . $postData['tahun'] . '', 'after')->first();
+                $data['results'] = $result;
+                $data['status'] = ["code" => 200, "description" => "OK"];
+            } elseif ($postData['type'] == 'user') {
+                $result = $this->user->select('COUNT(*) as jml')->like('created_at', '' . $postData['tahun'] . '', 'after')->first();
+                $data['results'] = $result;
+                $data['status'] = ["code" => 200, "description" => "OK"];
+            }
+        }
+
+        return $this->respond($data);
+    }
+}
